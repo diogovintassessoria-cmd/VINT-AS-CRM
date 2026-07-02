@@ -409,11 +409,7 @@
       <button class="btn btn-primary" id="toggleAdd">+ Novo cliente</button>
     </div>
   </header>
-
-  <div id="configWarning" class="config-warning" style="display:none;">
-    Configure sua conexão com o Supabase antes de usar o app: abra <code>index.html</code> e preencha
-    <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> no início do bloco <code>&lt;script&gt;</code>.
-    Veja o arquivo <code>SETUP.md</code> para o passo a passo.
+  
   </div>
 
   <section class="summary">
@@ -479,11 +475,11 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const CONTRACTS_BUCKET = "contratos";
 /* ======================================================= */
 
-let supabase = null;
+let supabaseClient = null;
 let isConfigured = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
 
 if (isConfigured) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } else {
   document.getElementById('configWarning').style.display = 'block';
 }
@@ -509,7 +505,7 @@ function brl(value){
 /* ---------- Data loading ---------- */
 async function loadClients(){
   if(!isConfigured) return;
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('clients')
     .select('*')
     .order('created_at', { ascending:false });
@@ -641,7 +637,7 @@ function fileInput(clientId){
 
 /* ---------- Mutations ---------- */
 async function updateField(id, field, value){
-  const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', id);
+  const { error } = await supabaseClient.from('clients').update({ [field]: value }).eq('id', id);
   if(error){
     showToast('Erro ao salvar: ' + error.message);
     return;
@@ -658,7 +654,7 @@ async function uploadContract(clientId, file){
   }
   showToast('Enviando contrato…');
   const path = `${clientId}/${Date.now()}_${file.name}`;
-  const { error: upErr } = await supabase.storage.from(CONTRACTS_BUCKET).upload(path, file, {
+  const { error: upErr } = await supabaseClient.storage.from(CONTRACTS_BUCKET).upload(path, file, {
     cacheControl: '3600',
     upsert: false
   });
@@ -666,7 +662,7 @@ async function uploadContract(clientId, file){
     showToast('Erro ao enviar PDF: ' + upErr.message);
     return;
   }
-  const { data: pub } = supabase.storage.from(CONTRACTS_BUCKET).getPublicUrl(path);
+  const { data: pub } = supabaseClient.storage.from(CONTRACTS_BUCKET).getPublicUrl(path);
   await updateField(clientId, 'contract_url', pub.publicUrl);
   await updateField(clientId, 'contract_name', file.name);
   showToast('Contrato anexado com sucesso.');
@@ -674,7 +670,7 @@ async function uploadContract(clientId, file){
 
 async function deleteClient(c){
   if(!confirm(`Excluir o cliente "${c.name}"? Essa ação não pode ser desfeita.`)) return;
-  const { error } = await supabase.from('clients').delete().eq('id', c.id);
+  const { error } = await supabaseClient.from('clients').delete().eq('id', c.id);
   if(error){
     showToast('Erro ao excluir: ' + error.message);
     return;
@@ -696,7 +692,7 @@ async function createClient(){
     return;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('clients')
     .insert({ name, price, paid:false })
     .select()
