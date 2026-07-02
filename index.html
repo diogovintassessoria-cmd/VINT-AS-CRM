@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vint Assessoria — Controle Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-soft:#39434f;
+    --paper:#F7F4EE;
+    --paper-raised:#FFFFFF;
+    --gold:#C89B3C;
+    --gold-deep:#9E7A28;
+    --green:#2F6E4F;
+    --green-bg:#E7F0EA;
+    --clay:#B5533C;
+    --clay-bg:#F5E7E1;
+    --line:#DDD7C8;
+    --muted:#7A7568;
+    --radius:10px;
+    --shadow: 0 1px 2px rgba(27,36,48,0.04), 0 8px 24px rgba(27,36,48,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    padding:32px 20px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:20px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:28px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .brand-mark{
+    width:42px;height:42px;
+    border-radius:50%;
+    background:var(--ink);
+    color:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:19px;
+    flex-shrink:0;
+  }
+  .brand-text h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .brand-text p{
+    margin:2px 0 0;
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:0.02em;
+  }
+  .top-actions{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  #search{
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:10px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--paper-raised);
+    width:220px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  #search:focus{border-color:var(--gold-deep);}
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:8px;
+    border:1px solid transparent;
+    cursor:pointer;
+    transition:transform .1s, box-shadow .15s, background .15s;
+    white-space:nowrap;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .btn-primary:hover{background:var(--ink-soft);}
+  .btn-ghost{
+    background:transparent;
+    border-color:var(--line);
+    color:var(--ink);
+  }
+  .btn-ghost:hover{border-color:var(--gold-deep);}
+  .btn-sm{
+    padding:6px 12px;
+    font-size:12.5px;
+    border-radius:6px;
+  }
+
+  /* ---------- Summary cards ---------- */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-bottom:32px;
+  }
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 18px 16px;
+    box-shadow:var(--shadow);
+  }
+  .card .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .card .value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .card.received .value{color:var(--green);}
+  .card.pending .value{color:var(--clay);}
+
+  /* ---------- Add client panel ---------- */
+  .add-panel{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px;
+    margin-bottom:28px;
+    display:none;
+  }
+  .add-panel.open{display:block;}
+  .add-panel h3{
+    margin:0 0 14px;
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:17px;
+  }
+  .add-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr auto;
+    gap:12px;
+    align-items:end;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  .field input{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    outline:none;
+    background:var(--paper);
+    transition:border-color .15s;
+  }
+  .field input:focus{border-color:var(--gold-deep);}
+
+  /* ---------- Ledger ---------- */
+  .ledger-head{
+    display:grid;
+    grid-template-columns: 1fr 130px 140px 190px 40px;
+    padding:0 18px 10px;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    color:var(--muted);
+    font-weight:700;
+    border-bottom:1px solid var(--ink);
+  }
+  .ledger{
+    display:flex;
+    flex-direction:column;
+  }
+  .row{
+    display:grid;
+    grid-template-columns: 1fr 130px 140px 190px 40px;
+    align-items:center;
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+    background:var(--paper-raised);
+    transition:background .15s;
+    gap:8px;
+  }
+  .row:hover{background:#FBFAF7;}
+  .row .name{
+    font-weight:600;
+    font-size:15px;
+    outline:none;
+    border-radius:5px;
+    padding:3px 6px;
+    margin-left:-6px;
+    cursor:text;
+  }
+  .row .name:focus{background:var(--paper); box-shadow:0 0 0 1px var(--gold-deep);}
+  .row .price{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:14.5px;
+    outline:none;
+    border-radius:5px;
+    padding:3px 6px;
+    margin-left:-6px;
+    cursor:text;
+    width:fit-content;
+  }
+  .row .price:focus{background:var(--paper); box-shadow:0 0 0 1px var(--gold-deep);}
+
+  /* stamp */
+  .stamp{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.06em;
+    padding:6px 12px;
+    border-radius:20px;
+    border:1.5px dashed var(--clay);
+    color:var(--clay);
+    background:var(--clay-bg);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    cursor:pointer;
+    transform:rotate(-2deg);
+    transition:transform .15s, opacity .15s;
+    width:fit-content;
+  }
+  .stamp:hover{transform:rotate(-2deg) scale(1.04);}
+  .stamp.paid{
+    border-color:var(--green);
+    color:var(--green);
+    background:var(--green-bg);
+    transform:rotate(1.5deg);
+  }
+  .stamp.paid:hover{transform:rotate(1.5deg) scale(1.04);}
+
+  /* contract cell */
+  .contract-cell{display:flex;align-items:center;gap:8px;}
+  .contract-link{
+    font-size:13px;
+    color:var(--ink);
+    text-decoration:none;
+    border-bottom:1px solid var(--gold);
+    padding-bottom:1px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+  }
+  .contract-link:hover{color:var(--gold-deep);}
+  .file-label{
+    font-size:12.5px;
+    color:var(--muted);
+    border:1px dashed var(--line);
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    transition:border-color .15s, color .15s;
+  }
+  .file-label:hover{border-color:var(--gold-deep); color:var(--ink);}
+  .file-label input{display:none;}
+  .swap{
+    font-size:11.5px;
+    color:var(--muted);
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .swap:hover{color:var(--ink);}
+
+  .del-btn{
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:var(--muted);
+    padding:6px;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s, color .15s;
+  }
+  .del-btn:hover{background:var(--clay-bg); color:var(--clay);}
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--muted);
+  }
+  .empty .em-mark{
+    font-family:'Fraunces',serif;
+    font-size:34px;
+    color:var(--line);
+    margin-bottom:10px;
+  }
+  .empty p{font-size:14px;}
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink);
+    color:var(--paper);
+    padding:11px 20px;
+    border-radius:8px;
+    font-size:13.5px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s, transform .2s;
+    z-index:50;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
+
+  .config-warning{
+    background:var(--clay-bg);
+    border:1px solid var(--clay);
+    color:var(--ink);
+    padding:16px 18px;
+    border-radius:var(--radius);
+    font-size:13.5px;
+    margin-bottom:24px;
+    line-height:1.55;
+  }
+  .config-warning code{
+    background:rgba(27,36,48,0.06);
+    padding:1px 5px;
+    border-radius:4px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+  }
+
+  @media (max-width: 760px){
+    .summary{grid-template-columns:1fr 1fr;}
+    .ledger-head{display:none;}
+    .add-grid{grid-template-columns:1fr;}
+    .row{
+      grid-template-columns:1fr;
+      row-gap:10px;
+      position:relative;
+      padding:16px 18px;
+    }
+    .row .del-btn{position:absolute; top:14px; right:14px;}
+    #search{width:100%;}
+    .top-actions{width:100%;}
+    header.top{align-items:stretch;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">V</div>
+      <div class="brand-text">
+        <h1>Vint Assessoria</h1>
+        <p>Controle financeiro de clientes</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <input type="text" id="search" placeholder="Buscar cliente…" />
+      <button class="btn btn-primary" id="toggleAdd">+ Novo cliente</button>
+    </div>
+  </header>
+
+  <div id="configWarning" class="config-warning" style="display:none;">
+    Configure sua conexão com o Supabase antes de usar o app: abra <code>index.html</code> e preencha
+    <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code> no início do bloco <code>&lt;script&gt;</code>.
+    Veja o arquivo <code>SETUP.md</code> para o passo a passo.
+  </div>
+
+  <section class="summary">
+    <div class="card">
+      <div class="label">Clientes</div>
+      <div class="value" id="sumClients">0</div>
+    </div>
+    <div class="card">
+      <div class="label">Valor total</div>
+      <div class="value" id="sumTotal">R$ 0,00</div>
+    </div>
+    <div class="card received">
+      <div class="label">Recebido</div>
+      <div class="value" id="sumReceived">R$ 0,00</div>
+    </div>
+    <div class="card pending">
+      <div class="label">Pendente</div>
+      <div class="value" id="sumPending">R$ 0,00</div>
+    </div>
+  </section>
+
+  <div class="add-panel" id="addPanel">
+    <h3>Adicionar cliente</h3>
+    <div class="add-grid">
+      <div class="field">
+        <label for="newName">Nome do cliente</label>
+        <input type="text" id="newName" placeholder="Ex: Padaria Boa Vista" />
+      </div>
+      <div class="field">
+        <label for="newPrice">Valor (R$)</label>
+        <input type="number" id="newPrice" placeholder="0,00" step="0.01" min="0" />
+      </div>
+      <button class="btn btn-primary" id="saveNew">Salvar</button>
+    </div>
+  </div>
+
+  <div class="ledger-head">
+    <div>Cliente</div>
+    <div>Valor</div>
+    <div>Status</div>
+    <div>Contrato</div>
+    <div></div>
+  </div>
+
+  <div class="ledger" id="ledger"></div>
+
+  <div class="empty" id="emptyState" style="display:none;">
+    <div class="em-mark">V</div>
+    <p>Nenhum cliente cadastrado ainda.<br/>Clique em "Novo cliente" para começar.</p>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =======================================================
+   CONFIGURAÇÃO — preencha com os dados do seu projeto Supabase
+   (veja SETUP.md para o passo a passo completo)
+======================================================= */
+const SUPABASE_URL = "https://llbiiqsaaelbthorruma.supabase.co/rest/v1/";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxsYmlpcXNhYWVsYnRob3JydW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MzM1MzEsImV4cCI6MjA5ODUwOTUzMX0.Bw_7pY46drBk1aZ_JpsgYcyARZa3XyY2ywJ-0LcHMsE";
+const CONTRACTS_BUCKET = "contratos";
+/* ======================================================= */
+
+let supabase = null;
+let isConfigured = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
+
+if (isConfigured) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} else {
+  document.getElementById('configWarning').style.display = 'block';
+}
+
+let clients = [];
+let searchTerm = "";
+
+const ledgerEl = document.getElementById('ledger');
+const emptyEl = document.getElementById('emptyState');
+const toastEl = document.getElementById('toast');
+
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 2600);
+}
+
+function brl(value){
+  return (Number(value) || 0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
+}
+
+/* ---------- Data loading ---------- */
+async function loadClients(){
+  if(!isConfigured) return;
+  const { data, error } = await supabase
+    .from('clients')
+    .select('*')
+    .order('created_at', { ascending:false });
+  if(error){
+    showToast('Erro ao carregar clientes: ' + error.message);
+    return;
+  }
+  clients = data || [];
+  render();
+}
+
+/* ---------- Render ---------- */
+function render(){
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = term
+    ? clients.filter(c => c.name.toLowerCase().includes(term))
+    : clients;
+
+  ledgerEl.innerHTML = '';
+
+  if(filtered.length === 0){
+    emptyEl.style.display = 'block';
+  } else {
+    emptyEl.style.display = 'none';
+    filtered.forEach(c => ledgerEl.appendChild(renderRow(c)));
+  }
+
+  const totalClients = clients.length;
+  const total = clients.reduce((s,c)=> s + Number(c.price||0), 0);
+  const received = clients.filter(c=>c.paid).reduce((s,c)=> s + Number(c.price||0), 0);
+  const pending = total - received;
+
+  document.getElementById('sumClients').textContent = totalClients;
+  document.getElementById('sumTotal').textContent = brl(total);
+  document.getElementById('sumReceived').textContent = brl(received);
+  document.getElementById('sumPending').textContent = brl(pending);
+}
+
+function renderRow(c){
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.dataset.id = c.id;
+
+  // name
+  const nameEl = document.createElement('div');
+  nameEl.className = 'name';
+  nameEl.contentEditable = 'true';
+  nameEl.spellcheck = false;
+  nameEl.textContent = c.name;
+  nameEl.addEventListener('blur', ()=> updateField(c.id, 'name', nameEl.textContent.trim() || c.name));
+  nameEl.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); nameEl.blur(); }});
+
+  // price
+  const priceEl = document.createElement('div');
+  priceEl.className = 'price';
+  priceEl.contentEditable = 'true';
+  priceEl.spellcheck = false;
+  priceEl.textContent = brl(c.price);
+  priceEl.addEventListener('focus', ()=>{ priceEl.textContent = c.price; });
+  priceEl.addEventListener('blur', ()=>{
+    const raw = priceEl.textContent.replace(',', '.').replace(/[^\d.]/g,'');
+    const val = parseFloat(raw);
+    const finalVal = isNaN(val) ? c.price : val;
+    priceEl.textContent = brl(finalVal);
+    if(finalVal !== Number(c.price)) updateField(c.id, 'price', finalVal);
+  });
+  priceEl.addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); priceEl.blur(); }});
+
+  // status stamp
+  const statusWrap = document.createElement('div');
+  const stamp = document.createElement('button');
+  stamp.className = 'stamp' + (c.paid ? ' paid' : '');
+  stamp.textContent = c.paid ? '✓ pago' : '○ pendente';
+  stamp.addEventListener('click', ()=> updateField(c.id, 'paid', !c.paid));
+  statusWrap.appendChild(stamp);
+
+  // contract
+  const contractCell = document.createElement('div');
+  contractCell.className = 'contract-cell';
+  if(c.contract_url){
+    const link = document.createElement('a');
+    link.href = c.contract_url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.className = 'contract-link';
+    link.textContent = '📄 Ver contrato';
+    const swap = document.createElement('label');
+    swap.className = 'swap';
+    swap.textContent = 'trocar';
+    const input = fileInput(c.id);
+    swap.appendChild(input);
+    contractCell.appendChild(link);
+    contractCell.appendChild(swap);
+  } else {
+    const label = document.createElement('label');
+    label.className = 'file-label';
+    label.textContent = '⬆ Anexar PDF';
+    const input = fileInput(c.id);
+    label.appendChild(input);
+    contractCell.appendChild(label);
+  }
+
+  // delete
+  const delBtn = document.createElement('button');
+  delBtn.className = 'del-btn';
+  delBtn.title = 'Excluir cliente';
+  delBtn.innerHTML = '✕';
+  delBtn.addEventListener('click', ()=> deleteClient(c));
+
+  row.appendChild(nameEl);
+  row.appendChild(priceEl);
+  row.appendChild(statusWrap);
+  row.appendChild(contractCell);
+  row.appendChild(delBtn);
+
+  return row;
+}
+
+function fileInput(clientId){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf';
+  input.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) uploadContract(clientId, file);
+  });
+  return input;
+}
+
+/* ---------- Mutations ---------- */
+async function updateField(id, field, value){
+  const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', id);
+  if(error){
+    showToast('Erro ao salvar: ' + error.message);
+    return;
+  }
+  const c = clients.find(x=>x.id===id);
+  if(c) c[field] = value;
+  render();
+}
+
+async function uploadContract(clientId, file){
+  if(file.type !== 'application/pdf'){
+    showToast('Envie apenas arquivos PDF.');
+    return;
+  }
+  showToast('Enviando contrato…');
+  const path = `${clientId}/${Date.now()}_${file.name}`;
+  const { error: upErr } = await supabase.storage.from(CONTRACTS_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    upsert: false
+  });
+  if(upErr){
+    showToast('Erro ao enviar PDF: ' + upErr.message);
+    return;
+  }
+  const { data: pub } = supabase.storage.from(CONTRACTS_BUCKET).getPublicUrl(path);
+  await updateField(clientId, 'contract_url', pub.publicUrl);
+  await updateField(clientId, 'contract_name', file.name);
+  showToast('Contrato anexado com sucesso.');
+}
+
+async function deleteClient(c){
+  if(!confirm(`Excluir o cliente "${c.name}"? Essa ação não pode ser desfeita.`)) return;
+  const { error } = await supabase.from('clients').delete().eq('id', c.id);
+  if(error){
+    showToast('Erro ao excluir: ' + error.message);
+    return;
+  }
+  clients = clients.filter(x=>x.id!==c.id);
+  render();
+  showToast('Cliente excluído.');
+}
+
+async function createClient(){
+  const nameInput = document.getElementById('newName');
+  const priceInput = document.getElementById('newPrice');
+  const name = nameInput.value.trim();
+  const price = parseFloat(priceInput.value) || 0;
+
+  if(!name){
+    showToast('Digite o nome do cliente.');
+    nameInput.focus();
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('clients')
+    .insert({ name, price, paid:false })
+    .select()
+    .single();
+
+  if(error){
+    showToast('Erro ao salvar: ' + error.message);
+    return;
+  }
+
+  clients.unshift(data);
+  render();
+  nameInput.value = '';
+  priceInput.value = '';
+  document.getElementById('addPanel').classList.remove('open');
+  showToast('Cliente adicionado.');
+}
+
+/* ---------- UI events ---------- */
+document.getElementById('toggleAdd').addEventListener('click', ()=>{
+  const panel = document.getElementById('addPanel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open')) document.getElementById('newName').focus();
+});
+document.getElementById('saveNew').addEventListener('click', createClient);
+document.getElementById('search').addEventListener('input', (e)=>{
+  searchTerm = e.target.value;
+  render();
+});
+
+loadClients();
+</script>
+
+</body>
+</html>
